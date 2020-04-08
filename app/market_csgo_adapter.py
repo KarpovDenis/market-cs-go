@@ -2,8 +2,8 @@ from typing import Any, Dict
 
 import requests
 
-from config.config import URL_API, TIMEOUT
-from exceptions import ApiCallError, InvalidApiTokenError, InvalidParamsTypesError
+from config import URL_API, TIMEOUT
+from exceptions import ApiCallError, InvalidApiTokenError, InvalidParamsTypesError, InvalidParamsError
 from fields_validation import FieldsValidator
 
 
@@ -62,13 +62,12 @@ class MarketCSGOAdapter:
     def item(self) -> API_RESPONSE:
         return self._api_call(f"item?key={self.api_token}")
 
-    def trades(self) -> API_RESPONSE:
-        return self._api_call(f"trades?key={self.api_token}")
-
-    # рассмотерть медод trades на предмет extendeds , я предпологаю что это словарь \ так же меня смутил второй запрос \ единственная мысль сейчас это создать второй метод
-    #     def trades_extendeds(self,extendeds_number) -> API_RESPONSE:
-    #         return self._api_call(f"trades?key={self.api_token}&extended={extendeds_number}")\\ аргументируя тем что вариант имеет место быть в документации extended
-    # выглядит как парметр но в запросе им не является \я предполагаю что меняется только номер
+    def trades(self, extended: bool = False) -> API_RESPONSE:
+        base_params = f"trades?key={self.api_token}"
+        if not extended:
+            return self._api_call(base_params)
+        else:
+            return self._api_call(f"{base_params}&extended=1")
 
     def buy(self, item_id: str, price: int) -> API_RESPONSE:
         FieldsValidator().validation_item_id(item_id)
@@ -80,23 +79,32 @@ class MarketCSGOAdapter:
         FieldsValidator().validation_price(price)
         return self._api_call(f"buy?key={self.api_token}&market-hash-name={market_hash_name}&price={price}")
 
-    ## метод  buy-for требует обсуждения \ указанные там параметры не совсем понятны
-    # если я правильно понял то partner = his secret key , а token = его уникльному коду
-    # если я прав то метод будет выглядить на примере метода с market_hash_name
-    #    def buy_for_market_hash_name(self, market_hash_name: str, price: int, partner: API_TOKEN, token:str) -> API_RESPONSE:
-    #    FieldsValidator().validation_market_hash_name(market_hash_name)
-    #    FieldsValidator().validation_price(price)
-    #    методы валидации не создавал \ так как ваириант спроный
-    #    return self._api_call(f"buy-for?key={self.api_token}&market-hash-name={market_hash_name}&price={price}&partner=[partner]&token=[token]") get_buy_info_by_custom_id
+    def buy_for(self, price: int, partner: str, token: API_TOKEN, item_hash_name: str = None, item_id: str = None) -> API_RESPONSE:
+
+        if item_hash_name and item_id:
+            raise InvalidParamsError("Укажите один из параметров запроса")
+
+        FieldsValidator().validation_price(price)
+
+        if item_hash_name:
+            return self._api_call(f"buy-for?key={self.api_token}&hash-name={item_hash_name}&price={price}&partner={partner}&token={token}")
+        if item_id:
+            return self._api_call(f"buy-for?key={self.api_token}&id={item_id}&price={price}&partner={partner}&token={token}")
+
+        raise InvalidParamsError
+        # доделать валидацию \ сделать ретурны по красоте смотри метод treide
+        #FieldsValidator().validation_market_hash_name(item_hash_name)
+
 
     def get_buy_info_by_custom_id(self, custom_id: str) -> API_RESPONSE:
         FieldsValidator().validation_custom_id(custom_id)
         return self._api_call(f"get-buy-info-by-custom-id?key={self.api_token}&custom_id={custom_id}")
 
-    def history(self, data: str) -> API_RESPONSE:
-        return self._api_call(f"history?key={self.api_token}&date={data}")
+    def history(self, date: str) -> API_RESPONSE:
+        return self._api_call(f"history?key={self.api_token}&date={date}")
 # создать валидацию для даты
-
+# доработать метод дата , использовать использовать datetime.date cm  дискорт
+    # доработать все методы по примеру treid
     def go_offline(self) -> API_RESPONSE:
         return self._api_call(f"go-offline?key={self.api_token}")
 
