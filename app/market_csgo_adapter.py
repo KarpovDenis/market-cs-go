@@ -1,3 +1,4 @@
+import datetime
 from typing import Any, Dict
 
 import requests
@@ -69,17 +70,25 @@ class MarketCSGOAdapter:
         else:
             return self._api_call(f"{base_params}&extended=1")
 
-    def buy(self, item_id: str, price: int) -> API_RESPONSE:
+    def buy(self, price: int, item_hash_name: str = None, item_id: str = None) -> API_RESPONSE:
+        base_params = f"buy?key={self.api_token}"
+
         FieldsValidator().validation_item_id(item_id)
         FieldsValidator().validation_price(price)
-        return self._api_call(f"buy?key={self.api_token}&item_id={item_id}&price={price}")
+        FieldsValidator().validation_market_hash_name(item_hash_name)
 
-    def buy_market_hash_name(self, market_hash_name: str, price: int) -> API_RESPONSE:
-        FieldsValidator().validation_market_hash_name(market_hash_name)
-        FieldsValidator().validation_price(price)
-        return self._api_call(f"buy?key={self.api_token}&market-hash-name={market_hash_name}&price={price}")
+        if item_hash_name and item_id:
+            raise InvalidParamsError("Укажите один из параметров запроса")
+
+        if item_hash_name:
+            return self._api_call(f"{base_params}&hash-name={item_hash_name}&price={price}")
+        if item_id:
+            return self._api_call(f"{base_params}&item_id={item_id}&price={price}")
+
+        return self._api_call(f"{base_params}&item_id={item_id}&price={price}")
 
     def buy_for(self, price: int, partner: str, token: API_TOKEN, item_hash_name: str = None, item_id: str = None) -> API_RESPONSE:
+        base_params = "buy-for?key={self.api_token}"
 
         if item_hash_name and item_id:
             raise InvalidParamsError("Укажите один из параметров запроса")
@@ -87,9 +96,9 @@ class MarketCSGOAdapter:
         FieldsValidator().validation_price(price)
 
         if item_hash_name:
-            return self._api_call(f"buy-for?key={self.api_token}&hash-name={item_hash_name}&price={price}&partner={partner}&token={token}")
+            return self._api_call(f"{base_params}&hash-name={item_hash_name}&price={price}&partner={partner}&token={token}")
         if item_id:
-            return self._api_call(f"buy-for?key={self.api_token}&id={item_id}&price={price}&partner={partner}&token={token}")
+            return self._api_call(f"{base_params}}&id={item_id}&price={price}&partner={partner}&token={token}")
 
         raise InvalidParamsError
         # доделать валидацию \ сделать ретурны по красоте смотри метод treide
@@ -141,5 +150,10 @@ class MarketCSGOAdapter:
 
     def trade_request_give_p2p_all(self) -> API_RESPONSE:
         return self._api_call(f"trade-request-give-p2p-all?key={self.api_token}")
+
+    #https://market.csgo.com/api/v2/history?key=[your_secret_key]&date=[DD-MM-YYYY]
+
+    def history(self, date: datetime.date()) -> API_RESPONSE:
+        return self._api_call(f"history?key={self.api_token}&date={date}")
 
 # прочитать что такое деккоратор \ ссылка есть в дискорте от жени \ прочитать про валидациюи прочитать как переместить валидацию в деккоратор
