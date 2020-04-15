@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 import requests
 
-from config import URL_API, TIMEOUT
+from config.config import URL_API, TIMEOUT
 from exceptions import ApiCallError, InvalidApiTokenError, InvalidParamsTypesError, InvalidParamsError
 from fields_validation import FieldsValidator
 
@@ -98,7 +98,7 @@ class MarketCSGOAdapter:
         if item_hash_name:
             return self._api_call(f"{base_params}&hash-name={item_hash_name}&price={price}&partner={partner}&token={token}")
         if item_id:
-            return self._api_call(f"{base_params}}&id={item_id}&price={price}&partner={partner}&token={token}")
+            return self._api_call(f"{base_params}&id={item_id}&price={price}&partner={partner}&token={token}")
 
         raise InvalidParamsError
         # доделать валидацию \ сделать ретурны по красоте смотри метод treide
@@ -111,8 +111,8 @@ class MarketCSGOAdapter:
 
     def history(self, date: str) -> API_RESPONSE:
         return self._api_call(f"history?key={self.api_token}&date={date}")
-# создать валидацию для даты
-# доработать метод дата , использовать использовать datetime.date cm  дискорт
+    # создать валидацию для даты
+    # доработать метод дата , использовать использовать datetime.date cm  дискорт
     # доработать все методы по примеру treid
     def go_offline(self) -> API_RESPONSE:
         return self._api_call(f"go-offline?key={self.api_token}")
@@ -153,7 +153,7 @@ class MarketCSGOAdapter:
 
     #https://market.csgo.com/api/v2/history?key=[your_secret_key]&date=[DD-MM-YYYY]
 
-    def history(self, date: datetime.date()) -> API_RESPONSE:
+    def history(self, date: datetime.date) -> API_RESPONSE:
         return self._api_call(f"history?key={self.api_token}&date={date}")
 
 # прочитать что такое деккоратор \ ссылка есть в дискорте от жени \ прочитать про валидациюи прочитать как переместить валидацию в деккоратор
